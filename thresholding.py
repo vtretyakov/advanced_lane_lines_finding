@@ -36,16 +36,47 @@ def thresholding_pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
     color_binary = np.dstack(( np.zeros_like(sxbinary), sxbinary, s_binary))
     return color_binary
 
-result = thresholding_pipeline(image)
+def region_of_interest(img, vertices):
+    """
+        Applies an image mask.
+        
+        Only keeps the region of the image defined by the polygon
+        formed from `vertices`. The rest of the image is set to black.
+        """
+    #defining a blank mask to start with
+    mask = np.zeros_like(img)
+    
+    #defining a 3 channel or 1 channel color to fill the mask with depending on the input image
+    if len(img.shape) > 2:
+        channel_count = img.shape[2]  # i.e. 3 or 4 depending on your image
+        ignore_mask_color = (1,) * channel_count
+    else:
+        ignore_mask_color = 1
+    
+    #filling pixels inside the polygon defined by "vertices" with the fill color
+    cv2.fillPoly(mask, vertices, ignore_mask_color)
+    
+    #returning the image only where mask pixels are nonzero
+    masked_image = cv2.bitwise_and(img, mask)
+    return masked_image
 
-# Show the result
-#print(result.shape)
-#plt.subplot(231),plt.imshow(result,cmap='gray', extent=[0,1280,0,720], aspect=1),plt.title('ORIGINAL')
-#plt.subplot(232),plt.imshow(result,cmap='gray', extent=[0,1280,0,720], aspect=1),plt.title('REPLICATE')
+threshold_applied = thresholding_pipeline(image)
+cv2.imshow('Threshold applied', threshold_applied)
 
-#plt.show()
+#Define region of interest
+#imshape = image.shape #720 x 1280
+vertices = np.array([[(0,720),(550, 420), (730, 420), (1280,720)]], dtype=np.int32)
+roi_applied = region_of_interest(threshold_applied, vertices)
+cv2.imshow('ROI applied', roi_applied)
 
-cv2.imshow('Pipeline Result', result)
+#annotated = cv2.line(roi_applied,(216,720),(595,450),(0,0,255),2)
+#annotated = cv2.line(annotated,(1108,720),(689,450),(0,0,255),2)
+#annotated = cv2.line(annotated,(595,450),(689,450),(0,0,255),2)
+#cv2.imshow('Annotated lines', annotated)
+
+
+
+
 
 cv2.waitKey()
 
