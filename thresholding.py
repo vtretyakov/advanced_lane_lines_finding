@@ -2,10 +2,6 @@ import cv2
 from matplotlib import pyplot as plt
 import numpy as np
 
-#color and gradient thresholding
-image = cv2.imread('test_images/test4.jpg')
-#image = cv2.undistort(image, mtx, dist, None, mtx)
-
 # Edit this function to create your own pipeline.
 def thresholding_pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
     img = np.copy(img)
@@ -60,25 +56,28 @@ def region_of_interest(img, vertices):
     masked_image = cv2.bitwise_and(img, mask)
     return masked_image
 
-threshold_applied = thresholding_pipeline(image)
-cv2.imshow('Threshold applied', threshold_applied)
+#test functions
+enable_test = False
 
-#Define region of interest
-#imshape = image.shape #720 x 1280
-vertices = np.array([[(0,720),(550, 420), (730, 420), (1280,720)]], dtype=np.int32)
-roi_applied = region_of_interest(threshold_applied, vertices)
-cv2.imshow('ROI applied', roi_applied)
+if enable_test == True:
+    
+    image = cv2.imread('test_images/test4.jpg')
+    #image = cv2.undistort(image, mtx, dist, None, mtx)
 
-#annotated = cv2.line(roi_applied,(216,720),(595,450),(0,0,255),2)
-#annotated = cv2.line(annotated,(1108,720),(689,450),(0,0,255),2)
-#annotated = cv2.line(annotated,(595,450),(689,450),(0,0,255),2)
-#cv2.imshow('Annotated lines', annotated)
+    threshold_applied = thresholding_pipeline(image)
+    cv2.imshow('Threshold applied', threshold_applied)
 
+    #Define region of interest
+    #imshape = image.shape #720 x 1280
+    vertices = np.array([[(0,720),(550, 420), (730, 420), (1280,720)]], dtype=np.int32)
+    roi_applied = region_of_interest(threshold_applied, vertices)
+    cv2.imshow('ROI applied', roi_applied)
 
+    #annotated = cv2.line(roi_applied,(216,720),(595,450),(0,0,255),2)
+    #annotated = cv2.line(annotated,(1108,720),(689,450),(0,0,255),2)
+    #annotated = cv2.line(annotated,(595,450),(689,450),(0,0,255),2)
+    #cv2.imshow('Annotated lines', annotated)
 
+    cv2.waitKey()
 
-
-cv2.waitKey()
-
-
-cv2.destroyAllWindows()
+    cv2.destroyAllWindows()
