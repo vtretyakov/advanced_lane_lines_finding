@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from thresholding import thresholding_pipeline, region_of_interest
 
 ### Read test image
-img = cv2.imread('test_images/test3.jpg')
+img = cv2.imread('test_images/test1.jpg')
 #img = cv2.imread('camera_cal/test.jpg')
 
 ### Load camera calibration parameters
@@ -26,7 +26,7 @@ cv2.imshow('Threshold applied', threshold_applied)
 cv2.waitKey(1000)
 
 ### Apply ROI
-vertices = np.array([[(0,720),(550+80, 420), (730-80, 420), (1280,720)]], dtype=np.int32)
+vertices = np.array([[(0,720),(550+50, 420), (730-50, 420), (1280,720)]], dtype=np.int32)
 roi_applied = region_of_interest(threshold_applied, vertices)
 cv2.imshow('ROI applied', roi_applied)
 cv2.waitKey(1000)
@@ -43,9 +43,10 @@ if show_lines == True:
     undistorted = cv2.line(undistorted,(595,450),(689,450),(0,0,255),2)
     #cv2.imwrite('output_images/annotated_lines_before_perspective_transform.jpg',undistorted)
     cv2.imshow('Annotated lines', undistorted)
-    cv2.waitKey()
+    cv2.waitKey(1000)
 
 src = np.float32([[595,450],[689,450],[216,720],[1108,720]])
+#dst = np.float32([[216,0],[1108,0],[216,720],[1108S,720]])
 dst = np.float32([[216+100,0],[1108-100,0],[216+100,720],[1108-100,720]]) #WARNING: 100 pixels of image shrinking need to be converted into the radius scale coeficient and applied later on
 # Given src and dst points, calculate the perspective transform matrix
 M = cv2.getPerspectiveTransform(src, dst)
@@ -57,6 +58,7 @@ R_bin_channel = warped[:,:,2]
 Merged_binary = np.zeros_like(G_bin_channel)
 Merged_binary[(R_bin_channel > 0.0) | (G_bin_channel > 0.0) ] = 1
 cv2.imshow('Merged_binary', Merged_binary)
+cv2.waitKey(1000)
 # Convert to B&W for demonstration purpose
 Merged_binary_BW = np.zeros_like(Merged_binary)
 Merged_binary_BW[(Merged_binary == 1)] = 255
