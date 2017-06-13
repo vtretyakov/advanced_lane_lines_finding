@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from thresholding import thresholding_pipeline, region_of_interest
 
 ### Read test image
-img = cv2.imread('test_images/test1.jpg')
+img = cv2.imread('test_images/test2.jpg')
 #img = cv2.imread('camera_cal/test.jpg')
 
 ### Load camera calibration parameters
