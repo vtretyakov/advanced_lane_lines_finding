@@ -26,7 +26,7 @@ cv2.imshow('Threshold applied', threshold_applied)
 cv2.waitKey(1000)
 
 ### Apply ROI
-vertices = np.array([[(0,720),(550, 420), (730, 420), (1280,720)]], dtype=np.int32)
+vertices = np.array([[(0,720),(550+80, 420), (730-80, 420), (1280,720)]], dtype=np.int32)
 roi_applied = region_of_interest(threshold_applied, vertices)
 cv2.imshow('ROI applied', roi_applied)
 cv2.waitKey(1000)
