@@ -4,34 +4,34 @@ import numpy as np
 import matplotlib.pyplot as plt
 from thresholding import thresholding_pipeline, region_of_interest
 
-# Test undistortion on an image
+### Read test image
 img = cv2.imread('test_images/straight_lines2.jpg')
 #img = cv2.imread('camera_cal/test.jpg')
 
-#load camera calibration parameters
+### Load camera calibration parameters
 cal_params = pickle.load(open('camera_cal/dist_pickle.p', 'rb'))
 mtx = cal_params["mtx"]
 dist = cal_params["dist"]
 
-#test undistortion and save result
+### Test undistortion and save result
 undistorted = cv2.undistort(img, mtx, dist, None, mtx)
 undistorted_orig = undistorted.copy()
 #cv2.imwrite('output_images/test_undist_in_pipeline.jpg',undistorted)
 cv2.imshow('Undistorted Image', undistorted)
 cv2.waitKey(1000)
 
-#perform thresholding
+### Perform thresholding
 threshold_applied = thresholding_pipeline(undistorted)
 cv2.imshow('Threshold applied', threshold_applied)
 cv2.waitKey(1000)
 
-#apply ROI
+### Apply ROI
 vertices = np.array([[(0,720),(550, 420), (730, 420), (1280,720)]], dtype=np.int32)
 roi_applied = region_of_interest(threshold_applied, vertices)
 cv2.imshow('ROI applied', roi_applied)
 cv2.waitKey(1000)
 
-#perform perspective transformation
+### Perform perspective transformation
 show_lines = True
 img_size = (roi_applied.shape[1], roi_applied.shape[0])
 
@@ -51,12 +51,25 @@ dst = np.float32([[216,0],[1108,0],[216,720],[1108,720]])
 M = cv2.getPerspectiveTransform(src, dst)
 # Warp the image using OpenCV warpPerspective()
 warped = cv2.warpPerspective(roi_applied, M, img_size)
-warped_orig = warped.copy()
+B_bin_channel = warped[:,:,0]
+G_bin_channel = warped[:,:,1]
+R_bin_channel = warped[:,:,2]
+Merged_binary = np.zeros_like(G_bin_channel)
+Merged_binary[(R_bin_channel > 0.0) | (G_bin_channel > 0.0) ] = 1
+cv2.imshow('Merged_binary', Merged_binary)
+# Convert to B&W for demonstration purpose
+Merged_binary_BW = np.zeros_like(Merged_binary)
+Merged_binary_BW[(Merged_binary == 1)] = 255
+#warped_orig = warped.copy()
+#warped_orig = cv2.bitwise_not(warped_orig)
+#cv2.imwrite('output_images/perspective_transform_applied.jpg', Merged_binary_BW)
 
 warped = cv2.line(warped,(216,0),(216,720),(255,0,0),5)
 warped = cv2.line(warped,(1108,0),(1108,720),(255,0,0),5)
 #cv2.imwrite('output_images/annotated_lines_after_perspective_transform.jpg',warped)
 cv2.imshow('Warped image', warped)
+
+### Find lines
 
 cv2.waitKey()
 cv2.destroyAllWindows()
