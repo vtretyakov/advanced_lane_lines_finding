@@ -64,6 +64,7 @@ Merged_binary_BW = np.zeros_like(Merged_binary)
 Merged_binary_BW[(Merged_binary == 1)] = 255
 #warped_orig = warped.copy()
 #warped_orig = cv2.bitwise_not(warped_orig)
+#cv2.imwrite('output_images/perspective_transform_applied_bin.jpg', Merged_binary)
 #cv2.imwrite('output_images/perspective_transform_applied.jpg', Merged_binary_BW)
 
 warped = cv2.line(warped,(216+100,0),(216+100,720),(255,0,0),5)
