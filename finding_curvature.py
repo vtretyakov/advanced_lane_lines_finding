@@ -10,6 +10,7 @@ warped = mpimg.imread('output_images/perspective_transform_applied.jpg')
 window_width = 50
 window_height = 80 # Break image into 9 vertical layers since image height is 720
 margin = 100 # How much to slide left and right for searching
+x_shrink_factor = 1.15
 
 def window_mask(width, height, img_ref, center,level):
     output = np.zeros_like(img_ref)
@@ -98,7 +99,25 @@ left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
 right_fit = np.polyfit(right_y, right_x, 2)
 right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
 
+# Define conversions in x and y from pixels space to meters
+ym_per_pix = 30/720 # meters per pixel in y dimension
+xm_per_pix = 3.7/(700*x_shrink_factor) # meters per pixel in x dimension
+left_x_scaled = list(map(lambda x: x*xm_per_pix, left_x))
+left_y_scaled = list(map(lambda x: x*ym_per_pix, left_y))
+right_x_scaled = list(map(lambda x: x*xm_per_pix, right_x))
+right_y_scaled = list(map(lambda x: x*ym_per_pix, right_y))
 
+
+# Fit new polynomials to x,y in world space
+left_fit_cr = np.polyfit(left_y_scaled, left_x_scaled, 2)
+right_fit_cr = np.polyfit(right_y_scaled, right_x_scaled, 2)
+# Calculate the new radii of curvature
+y_eval = 719 #maximum y-value corresponding to the bottom of the image
+left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
+right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
+# Now our radius of curvature is in meters
+print(left_curverad, 'm', right_curverad, 'm')
+# Example values: 632.1 m    626.2 m
 
 # Display the final results
 mark_size = 3
