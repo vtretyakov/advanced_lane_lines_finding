@@ -82,7 +82,30 @@ if len(window_centroids) > 0:
 else:
     output = np.array(cv2.merge((warped,warped,warped)),np.uint8)
 
+
+# Fit a second order polynomial to the found window centers
+left_x = [x[0] for x in window_centroids]
+right_x = [x[1] for x in window_centroids]
+left_y = []
+right_y = []
+for y in range(0,len(window_centroids)):
+    left_y.append((len(window_centroids) - y)*window_height - window_height/2)
+    right_y.append((len(window_centroids) - y)*window_height - window_height/2)
+
+left_fit = np.polyfit(left_y, left_x, 2)
+ploty = np.linspace(0, 719, num=720)# to cover same y-range as image
+left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
+right_fit = np.polyfit(right_y, right_x, 2)
+right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
+
+
+
 # Display the final results
+mark_size = 3
+plt.plot(left_x, left_y, 'o', color='red', markersize=mark_size)
+plt.plot(right_x, right_y, 'o', color='red', markersize=mark_size)
+plt.plot(left_fitx, ploty, color='blue', linewidth=2)
+plt.plot(right_fitx, ploty, color='blue', linewidth=2)
 plt.imshow(output)
 plt.title('window fitting results')
 plt.show()
