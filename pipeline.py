@@ -13,11 +13,6 @@ from moviepy.editor import VideoFileClip # just import what you need
 clip = VideoFileClip("project_video.mp4")
 #clip.preview(fps=15, audio=False)
 
-
-### Read test image
-img = cv2.imread('test_images/test2.jpg')
-#img = cv2.imread('camera_cal/test.jpg')
-
 def process_image(image):
     ### Load camera calibration parameters
     cal_params = pickle.load(open('camera_cal/dist_pickle.p', 'rb'))
@@ -57,7 +52,7 @@ def process_image(image):
         cv2.waitKey(1000)
 
     src = np.float32([[595,450],[689,450],[216,720],[1108,720]])
-    #dst = np.float32([[216,0],[1108,0],[216,720],[1108S,720]])
+    #dst = np.float32([[216,0],[1108,0],[216,720],[1108,720]])
     dst = np.float32([[216+100,0],[1108-100,0],[216+100,720],[1108-100,720]]) #WARNING: 100 pixels of image shrinking need to be converted into the radius scale coeficient and applied later on
     # Given src and dst points, calculate the perspective transform matrix
     M = cv2.getPerspectiveTransform(src, dst)
@@ -73,8 +68,6 @@ def process_image(image):
     # Convert to B&W for demonstration purpose
     #merged_binary_BW = np.zeros_like(merged_binary)
     #merged_binary_BW[(merged_binary == 1)] = 255
-    #warped_orig = warped.copy()
-    #warped_orig = cv2.bitwise_not(warped_orig)
     #cv2.imwrite('output_images/perspective_transform_applied_bin.jpg', merged_binary)
     #cv2.imwrite('output_images/perspective_transform_applied.jpg', merged_binary_BW)
 
@@ -220,8 +213,6 @@ def process_image(image):
         #cv2.fillPoly(window_img, np.int_([right_line_pts]), (0,255, 0))
         #out_img = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
 
-
-
     # Define conversions in x and y from pixels space to meters
     x_shrink_factor = 1.15
     ym_per_pix = 30/720 # meters per pixel in y dimension
@@ -234,12 +225,11 @@ def process_image(image):
     # Fit new polynomials to x,y in world space
     left_fit_cr = np.polyfit(left_y_scaled, left_x_scaled, 2)
     right_fit_cr = np.polyfit(right_y_scaled, right_x_scaled, 2)
+
     # Calculate the new radii of curvature
     y_eval = 719 #maximum y-value corresponding to the bottom of the image
     left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
     right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
-    # Now our radius of curvature is in meters
-    #print(left_curverad, 'm', right_curverad, 'm')
     
     # compute the offset from the center
     lane_center = (leftx[merged_binary.shape[0]-1] + rightx[merged_binary.shape[0]-1])/2
@@ -275,10 +265,10 @@ def process_image(image):
 new_clip = clip.fl_image( process_image )
 new_clip.write_videofile("processed.mp4", audio=False)
 
+### Test on images
+#img = cv2.imread('test_images/test2.jpg')
 #process_image(img)
 #process_image(img)
-
-### Find lines
 
 #cv2.waitKey()
 #cv2.destroyAllWindows()
