@@ -1,8 +1,8 @@
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
+import pickle
 
-# Edit this function to create your own pipeline.
 def thresholding_pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
     img = np.copy(img)
     # Convert to HSV color space and separate the V channel
@@ -56,28 +56,40 @@ def region_of_interest(img, vertices):
     masked_image = cv2.bitwise_and(img, mask)
     return masked_image
 
+
 #test functions
-enable_test = False
+enable_test = True
 
 if enable_test == True:
     
     image = cv2.imread('test_images/test4.jpg')
-    #image = cv2.undistort(image, mtx, dist, None, mtx)
+    
+    #Load camera calibration parameters
+    cal_params = pickle.load(open('camera_cal/dist_pickle.p', 'rb'))
+    mtx = cal_params["mtx"]
+    dist = cal_params["dist"]
+    
+    #Apply calibration
+    image = cv2.undistort(image, mtx, dist, None, mtx)
 
+    #Apply thresholding
     threshold_applied = thresholding_pipeline(image)
-    cv2.imshow('Threshold applied', threshold_applied)
 
-    #Define region of interest
+    #Define and apply region of interest
     #imshape = image.shape #720 x 1280
     vertices = np.array([[(0,720),(550, 420), (730, 420), (1280,720)]], dtype=np.int32)
     roi_applied = region_of_interest(threshold_applied, vertices)
+
+    #Display results
+    #cv2.imwrite('output_images/threshold_applied.jpg',threshold_applied*255)
+    cv2.imshow('Threshold applied', threshold_applied)
+    #cv2.imwrite('output_images/roi_applied.jpg',roi_applied*255)
     cv2.imshow('ROI applied', roi_applied)
 
-    #annotated = cv2.line(roi_applied,(216,720),(595,450),(0,0,255),2)
-    #annotated = cv2.line(annotated,(1108,720),(689,450),(0,0,255),2)
-    #annotated = cv2.line(annotated,(595,450),(689,450),(0,0,255),2)
-    #cv2.imshow('Annotated lines', annotated)
+    annotated = cv2.line(roi_applied,(216,720),(595,450),(0,0,255),2)
+    annotated = cv2.line(annotated,(1108,720),(689,450),(0,0,255),2)
+    annotated = cv2.line(annotated,(595,450),(689,450),(0,0,255),2)
+    cv2.imshow('Annotated lines', annotated)
 
     cv2.waitKey()
-
     cv2.destroyAllWindows()
