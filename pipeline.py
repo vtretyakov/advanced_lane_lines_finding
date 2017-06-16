@@ -15,7 +15,7 @@ clip = VideoFileClip("project_video.mp4")
 
 
 ### Read test image
-#img = cv2.imread('test_images/test2.jpg')
+img = cv2.imread('test_images/test2.jpg')
 #img = cv2.imread('camera_cal/test.jpg')
 
 def process_image(image):
@@ -164,8 +164,8 @@ def process_image(image):
             right_line.current_fit = np.polyfit(righty, rightx, 2)
         
             #Visualization
-            out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
-            out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
+            #out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
+            #out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
     
             # Do not do window search anymore
             left_line.detected = True
@@ -197,23 +197,28 @@ def process_image(image):
         ploty = np.linspace(0, merged_binary.shape[0]-1, merged_binary.shape[0] )
         left_fitx = left_line.current_fit[0]*ploty**2 + left_line.current_fit[1]*ploty + left_line.current_fit[2]
         right_fitx = right_line.current_fit[0]*ploty**2 + right_line.current_fit[1]*ploty + right_line.current_fit[2]
+        
+        if (left_fitx is None or right_fitx is None):
+            left_line.detected = False
+            right_line.detected = False
+        
         # Color in left and right line pixels
-        out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
-        out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
+        #out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
+        #out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
 
         # Generate a polygon to illustrate the search window area
         # And recast the x and y points into usable format for cv2.fillPoly()
-        left_line_window1 = np.array([np.transpose(np.vstack([left_fitx-margin, ploty]))])
-        left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([left_fitx+margin, ploty])))])
-        left_line_pts = np.hstack((left_line_window1, left_line_window2))
-        right_line_window1 = np.array([np.transpose(np.vstack([right_fitx-margin, ploty]))])
-        right_line_window2 = np.array([np.flipud(np.transpose(np.vstack([right_fitx+margin, ploty])))])
-        right_line_pts = np.hstack((right_line_window1, right_line_window2))
+        #left_line_window1 = np.array([np.transpose(np.vstack([left_fitx-margin, ploty]))])
+        #left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([left_fitx+margin, ploty])))])
+        #left_line_pts = np.hstack((left_line_window1, left_line_window2))
+        #right_line_window1 = np.array([np.transpose(np.vstack([right_fitx-margin, ploty]))])
+        #right_line_window2 = np.array([np.flipud(np.transpose(np.vstack([right_fitx+margin, ploty])))])
+        #right_line_pts = np.hstack((right_line_window1, right_line_window2))
 
         # Draw the lane onto the warped blank image
-        cv2.fillPoly(window_img, np.int_([left_line_pts]), (0,255, 0))
-        cv2.fillPoly(window_img, np.int_([right_line_pts]), (0,255, 0))
-        out_img = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
+        #cv2.fillPoly(window_img, np.int_([left_line_pts]), (0,255, 0))
+        #cv2.fillPoly(window_img, np.int_([right_line_pts]), (0,255, 0))
+        #out_img = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
 
 
 
@@ -235,6 +240,11 @@ def process_image(image):
     right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
     # Now our radius of curvature is in meters
     #print(left_curverad, 'm', right_curverad, 'm')
+    
+    # compute the offset from the center
+    lane_center = (leftx[merged_binary.shape[0]-1] + rightx[merged_binary.shape[0]-1])/2
+    center_offset_pixels = abs(img_size[0]/2 - lane_center)
+    center_offset_mtrs = xm_per_pix*center_offset_pixels
 
     #Unwarping image
     out_img = np.dstack((merged_binary, merged_binary, merged_binary))*255
@@ -257,7 +267,8 @@ def process_image(image):
 
     #Annotate image
     font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(result,"left_curverad {} right_curverad {}".format(left_curverad, right_curverad),(10,500), font, 1,(255,255,255),2)
+    cv2.putText(result,"left_curverad {0:4.1f} right_curverad {1:4.1f}".format(left_curverad, right_curverad),(300,100), font, 1,(255,255,255),2)
+    cv2.putText(result,"center offset {0:4.1f} mtrs".format(center_offset_mtrs),(450,150), font, 1,(255,255,255),2)
 
     return result
 
