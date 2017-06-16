@@ -23,3 +23,5 @@ class Line():
         self.allx = None
         #y values for detected line pixels
         self.ally = None
+        #counter for new windows found
+        self.new_windows_cnt = 0
