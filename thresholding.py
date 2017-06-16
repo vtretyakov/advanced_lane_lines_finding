@@ -58,7 +58,7 @@ def region_of_interest(img, vertices):
 
 
 #test functions
-enable_test = True
+enable_test = False
 
 if enable_test == True:
     
