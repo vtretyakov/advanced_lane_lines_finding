@@ -170,3 +170,26 @@ right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**
 print(left_curverad, 'm', right_curverad, 'm')
 # Example values: 632.1 m    626.2 m
 
+#Unwarping image
+out_img = np.dstack((binary_warped, binary_warped, binary_warped))*255
+y_points = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0])
+left_line_window = np.array(np.transpose(np.vstack([left_fitx, y_points])))
+right_line_window = np.array(np.flipud(np.transpose(np.vstack([right_fitx, y_points]))))
+line_points = np.vstack((left_line_window, right_line_window))
+cv2.fillPoly(out_img, np.int_([line_points]), [0,255, 0])
+
+img = cv2.imread('test_images/test2.jpg')
+    
+src = np.float32([[595,450],[689,450],[216,720],[1108,720]])
+dst = np.float32([[216+100,0],[1108-100,0],[216+100,720],[1108-100,720]])
+M_inv = cv2.getPerspectiveTransform(dst,src)
+
+img_size = (img.shape[1], img.shape[0])
+img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+unwarped = cv2.warpPerspective(out_img, M_inv, img_size , flags=cv2.INTER_LINEAR)
+
+result = cv2.addWeighted(img, 1, unwarped, 0.3, 0)
+
+plt.imshow(result)
+plt.show()
+
