@@ -263,7 +263,7 @@ def process_image(image):
     return result
 
 new_clip = clip.fl_image( process_image )
-new_clip.write_videofile("processed.mp4", audio=False)
+new_clip.write_videofile("project_video_processed.mp4", audio=False)
 
 ### Test on images
 #img = cv2.imread('test_images/test2.jpg')
