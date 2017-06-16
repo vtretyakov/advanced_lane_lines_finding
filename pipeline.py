@@ -99,7 +99,6 @@ def process_image(image):
     # Create empty lists to receive left and right lane pixel indices
     left_lane_inds = []
     right_lane_inds = []
-    
 
     # Processing first frame or if detection failed
     if (left_line.detected == False) & (right_line.detected == False):
@@ -216,11 +215,57 @@ def process_image(image):
         cv2.fillPoly(window_img, np.int_([right_line_pts]), (0,255, 0))
         out_img = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
 
-    return out_img
+
+
+    # Define conversions in x and y from pixels space to meters
+    x_shrink_factor = 1.15
+    ym_per_pix = 30/720 # meters per pixel in y dimension
+    xm_per_pix = 3.7/(700*x_shrink_factor) # meters per pixel in x dimension
+    left_x_scaled = list(map(lambda x: x*xm_per_pix, leftx))
+    left_y_scaled = list(map(lambda x: x*ym_per_pix, lefty))
+    right_x_scaled = list(map(lambda x: x*xm_per_pix, rightx))
+    right_y_scaled = list(map(lambda x: x*ym_per_pix, righty))
+
+    # Fit new polynomials to x,y in world space
+    left_fit_cr = np.polyfit(left_y_scaled, left_x_scaled, 2)
+    right_fit_cr = np.polyfit(right_y_scaled, right_x_scaled, 2)
+    # Calculate the new radii of curvature
+    y_eval = 719 #maximum y-value corresponding to the bottom of the image
+    left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
+    right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
+    # Now our radius of curvature is in meters
+    #print(left_curverad, 'm', right_curverad, 'm')
+
+    #Unwarping image
+    out_img = np.dstack((merged_binary, merged_binary, merged_binary))*255
+    y_points = np.linspace(0, merged_binary.shape[0]-1, merged_binary.shape[0])
+    left_fitx = left_line.current_fit[0]*y_points**2 + left_line.current_fit[1]*y_points + left_line.current_fit[2]
+    right_fitx = right_line.current_fit[0]*y_points**2 + right_line.current_fit[1]*y_points + right_line.current_fit[2]
+    
+    left_line_window = np.array(np.transpose(np.vstack([left_fitx, y_points])))
+    right_line_window = np.array(np.flipud(np.transpose(np.vstack([right_fitx, y_points]))))
+    line_points = np.vstack((left_line_window, right_line_window))
+    cv2.fillPoly(out_img, np.int_([line_points]), [0,255, 0])
+
+    M_inv = cv2.getPerspectiveTransform(dst,src)
+
+    #img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    unwarped = cv2.warpPerspective(out_img, M_inv, img_size , flags=cv2.INTER_LINEAR)
+
+    undistorted = undistorted.astype(float)
+    result = cv2.addWeighted(undistorted, 1, unwarped, 0.3, 0)
+
+    #Annotate image
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(result,"left_curverad {} right_curverad {}".format(left_curverad, right_curverad),(10,500), font, 1,(255,255,255),2)
+
+    return result
 
 new_clip = clip.fl_image( process_image )
 new_clip.write_videofile("processed.mp4", audio=False)
 
+#process_image(img)
+#process_image(img)
 
 ### Find lines
 
