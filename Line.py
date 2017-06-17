@@ -1,4 +1,5 @@
 import numpy as np
+import collections
 
 # Define a class to receive the characteristics of each line detection
 class Line():
@@ -10,7 +11,7 @@ class Line():
         #average x values of the fitted line over the last n iterations
         self.bestx = None
         #polynomial coefficients averaged over the last n iterations
-        self.best_fit = None
+        self.best_fit = np.array([0,0,0], dtype='float')
         #polynomial coefficients for the most recent fit
         self.current_fit = [np.array([False])]
         #radius of curvature of the line in some units
@@ -25,3 +26,5 @@ class Line():
         self.ally = None
         #counter for new windows found
         self.new_windows_cnt = 0
+        #circular buffer
+        self.buffer = collections.deque(maxlen=5)

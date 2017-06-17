@@ -4,14 +4,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 from thresholding import thresholding_pipeline, region_of_interest
 from Line import Line
+from moviepy.editor import VideoFileClip
 
 left_line = Line()
 right_line = Line()
 
-from moviepy.editor import VideoFileClip # just import what you need
 
 clip = VideoFileClip("project_video.mp4")
-#clip.preview(fps=15, audio=False)
+def running_average(buffer, current_fit):
+    average = np.array([0,0,0], dtype='float')
+    for i in range(len(buffer)):
+        average += buffer[i]
+    average = average/len(buffer)
+    return average
 
 def process_image(image):
     ### Load camera calibration parameters
@@ -163,6 +168,9 @@ def process_image(image):
             # Do not do window search anymore
             left_line.detected = True
             right_line.detected = True
+            left_line.new_windows_cnt = 0
+            right_line.new_windows_cnt = 0
+                
             
     else:
         
@@ -171,8 +179,8 @@ def process_image(image):
         nonzeroy = np.array(nonzero[0])
         nonzerox = np.array(nonzero[1])
         margin = 100
-        left_lane_inds = ((nonzerox > (left_line.current_fit[0]*(nonzeroy**2) + left_line.current_fit[1]*nonzeroy + left_line.current_fit[2] - margin)) & (nonzerox < (left_line.current_fit[0]*(nonzeroy**2) + left_line.current_fit[1]*nonzeroy + left_line.current_fit[2] + margin)))
-        right_lane_inds = ((nonzerox > (right_line.current_fit[0]*(nonzeroy**2) + right_line.current_fit[1]*nonzeroy + right_line.current_fit[2] - margin)) & (nonzerox < (right_line.current_fit[0]*(nonzeroy**2) + right_line.current_fit[1]*nonzeroy + right_line.current_fit[2] + margin)))
+        left_lane_inds = ((nonzerox > (left_line.best_fit[0]*(nonzeroy**2) + left_line.best_fit[1]*nonzeroy + left_line.best_fit[2] - margin)) & (nonzerox < (left_line.best_fit[0]*(nonzeroy**2) + left_line.best_fit[1]*nonzeroy + left_line.best_fit[2] + margin)))
+        right_lane_inds = ((nonzerox > (right_line.best_fit[0]*(nonzeroy**2) + right_line.best_fit[1]*nonzeroy + right_line.best_fit[2] - margin)) & (nonzerox < (right_line.best_fit[0]*(nonzeroy**2) + right_line.best_fit[1]*nonzeroy + right_line.best_fit[2] + margin)))
 
         # Again, extract left and right line pixel positions
         leftx = nonzerox[left_lane_inds]
@@ -213,6 +221,14 @@ def process_image(image):
         #cv2.fillPoly(window_img, np.int_([right_line_pts]), (0,255, 0))
         #out_img = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
 
+
+    #filter polynomials
+    left_line.buffer.append(left_line.current_fit)
+    right_line.buffer.append(right_line.current_fit)
+    left_line.best_fit = running_average(left_line.buffer, left_line.current_fit)
+    right_line.best_fit = running_average(right_line.buffer, right_line.current_fit)
+
+
     # Define conversions in x and y from pixels space to meters
     x_shrink_factor = 1.15
     ym_per_pix = 30/720 # meters per pixel in y dimension
@@ -239,8 +255,8 @@ def process_image(image):
     #Unwarping image
     out_img = np.dstack((merged_binary, merged_binary, merged_binary))*255
     y_points = np.linspace(0, merged_binary.shape[0]-1, merged_binary.shape[0])
-    left_fitx = left_line.current_fit[0]*y_points**2 + left_line.current_fit[1]*y_points + left_line.current_fit[2]
-    right_fitx = right_line.current_fit[0]*y_points**2 + right_line.current_fit[1]*y_points + right_line.current_fit[2]
+    left_fitx = left_line.best_fit[0]*y_points**2 + left_line.best_fit[1]*y_points + left_line.best_fit[2]
+    right_fitx = right_line.best_fit[0]*y_points**2 + right_line.best_fit[1]*y_points + right_line.best_fit[2]
     
     left_line_window = np.array(np.transpose(np.vstack([left_fitx, y_points])))
     right_line_window = np.array(np.flipud(np.transpose(np.vstack([right_fitx, y_points]))))
