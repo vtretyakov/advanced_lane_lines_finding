@@ -6,7 +6,7 @@ import pickle
 def thresholding_pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100)): #170, 255
     img = np.copy(img)
     img2 = np.copy(img)
-    # Convert to HSV color space and separate the V channel
+    # Convert to HLS color space and separate the V channel
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HLS).astype(np.float)
     l_channel = hsv[:,:,1]
     s_channel = hsv[:,:,2]
