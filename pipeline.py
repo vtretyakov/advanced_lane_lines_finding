@@ -62,7 +62,7 @@ def process_image(image):
     G_bin_channel = warped[:,:,1]
     R_bin_channel = warped[:,:,2]
     merged_binary = np.zeros_like(G_bin_channel)
-    merged_binary[(R_bin_channel > 0.0) | (G_bin_channel > 0.0) ] = 1
+    merged_binary[(R_bin_channel > 0.0) | (G_bin_channel > 0.0) | (B_bin_channel > 0.0)] = 1
     #!cv2.imshow('Merged_binary', merged_binary)
     #!cv2.waitKey(1000)
     # Convert to B&W for demonstration purpose
@@ -232,9 +232,9 @@ def process_image(image):
     right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
     
     # compute the offset from the center
-    lane_center = (leftx[merged_binary.shape[0]-1] + rightx[merged_binary.shape[0]-1])/2
-    center_offset_pixels = abs(img_size[0]/2 - lane_center)
-    center_offset_mtrs = xm_per_pix*center_offset_pixels
+    left = np.mean(leftx[len(leftx)//2:len(leftx)-1])
+    right = np.mean(rightx[len(rightx)//2:len(rightx)-1])
+    center_offset_mtrs = (merged_binary.shape[1]/2-np.mean([left, right]))*xm_per_pix/x_shrink_factor
 
     #Unwarping image
     out_img = np.dstack((merged_binary, merged_binary, merged_binary))*255
@@ -267,6 +267,7 @@ new_clip.write_videofile("project_video_processed.mp4", audio=False)
 
 ### Test on images
 #img = cv2.imread('test_images/test2.jpg')
+#process_image(img)
 #process_image(img)
 #process_image(img)
 
