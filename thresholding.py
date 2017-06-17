@@ -2,14 +2,21 @@ import cv2
 from matplotlib import pyplot as plt
 import numpy as np
 import pickle
+from moviepy.editor import VideoFileClip
 
-def thresholding_pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100)): #170, 255
+#test functions
+enable_test = False
+
+clip = VideoFileClip("project_video.mp4").subclip(38,43)#.subclip(20,25)
+
+def thresholding_pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100), g_thresh=(200, 255), l_thresh=(180, 255)):
     img = np.copy(img)
     img2 = np.copy(img)
     # Convert to HLS color space and separate the V channel
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HLS).astype(np.float)
-    l_channel = hsv[:,:,1]
-    s_channel = hsv[:,:,2]
+    hls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS).astype(np.float)
+    l_channel = hls[:,:,1]
+    s_channel = hls[:,:,2]
+    rgb = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB).astype(np.float)
     
     # Sobel x
     sobelx = cv2.Sobel(l_channel, cv2.CV_64F, 1, 0) # Take the derivative in x
@@ -25,15 +32,43 @@ def thresholding_pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100)): #170, 
     s_binary[(s_channel >= s_thresh[0]) & (s_channel <= s_thresh[1])] = 1
     mean_s = np.mean(s_binary)
     # Skip the channel if it has an abnormal dominance
-    if mean_s > 0.05:
+    if mean_s > 0.04:
         s_binary = np.zeros_like(s_channel)
-    g_channel = img2[:,:,1]
+    g_channel = rgb[:,:,1]
+    r_channel = rgb[:,:,0]
     g_channel_binary = np.zeros_like(g_channel)
-    g_channel_binary[(g_channel > 200) & (g_channel <= 255)] = 1
-    #cv2.imshow('g_channel', g_channel_binary*255)
+    r_channel_binary = np.zeros_like(r_channel)
+    g_channel_binary[((g_channel > g_thresh[0]) & (g_channel <= g_thresh[1]))] = 1
+    g_channel_binary[0:g_channel_binary.shape[0]//2, 0:g_channel_binary.shape[1]] = 0
+    mean_g = np.mean(g_channel_binary)
+    # Skip the channel if it has an abnormal dominance
+    if mean_g > 0.04:
+        g_channel_binary = np.zeros_like(g_channel)
+    l_channel_binary = np.zeros_like(l_channel)
+    l_channel_binary[((l_channel > l_thresh[0]) & (l_channel <= l_thresh[1]))] = 1
+    l_channel_binary[0:l_channel_binary.shape[0]//2, 0:l_channel_binary.shape[1]] = 0
+    l_channel_binary[l_channel_binary.shape[0]//2:l_channel_binary.shape[0], 0:l_channel_binary.shape[1]//5] = 0
+    l_channel_binary[l_channel_binary.shape[0]//2:l_channel_binary.shape[0], l_channel_binary.shape[1] - l_channel_binary.shape[1]//5:l_channel_binary.shape[1]] = 0
+    mean_l = np.mean(l_channel_binary)
+    # Skip the channel if it has an abnormal dominance
+    if mean_l > 0.01:
+        l_channel_binary = np.zeros_like(l_channel)
+    r_channel_binary[((r_channel > 220) & (r_channel <= 255))] = 1
+    r_channel_binary[0:r_channel_binary.shape[0]//2, 0:r_channel_binary.shape[1]] = 0
+    r_channel_binary[r_channel_binary.shape[0]//2:r_channel_binary.shape[0], r_channel_binary.shape[1] - r_channel_binary.shape[1]//5:r_channel_binary.shape[1]] = 0
+    mean_r = np.mean(r_channel_binary)
+    # Skip the channel if it has an abnormal dominance
+    if mean_r > 0.01:
+        r_channel_binary = np.zeros_like(r_channel)
+    
     # Stack each channel
-    color_binary = np.dstack(( g_channel_binary, sxbinary, s_binary))
-    return color_binary
+    combined_rg_and_l = np.zeros_like(g_channel_binary)
+    combined_rg_and_l[(g_channel_binary > 0.0) | (l_channel_binary > 0.0) | (r_channel_binary > 0.0)] = 1
+    color_binary = np.dstack(( combined_rg_and_l, sxbinary, s_binary))
+    if enable_test == True:
+        return color_binary*255
+    else:
+        return color_binary
 
 def region_of_interest(img, vertices):
     """
@@ -60,12 +95,11 @@ def region_of_interest(img, vertices):
     return masked_image
 
 
-#test functions
-enable_test = False
+
 
 if enable_test == True:
     
-    image = cv2.imread('test_images/test12.jpg')
+    image = cv2.imread('test_images/test23.jpg')
     
     #Load camera calibration parameters
     cal_params = pickle.load(open('camera_cal/dist_pickle.p', 'rb'))
@@ -96,3 +130,6 @@ if enable_test == True:
 
     cv2.waitKey()
     cv2.destroyAllWindows()
+    
+    new_clip = clip.fl_image( thresholding_pipeline )
+    new_clip.write_videofile("project_video_processed.mp4", audio=False)
